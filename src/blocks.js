@@ -7930,8 +7930,15 @@ ReporterBlockMorph.prototype.userDestroy = function () {
 // ReporterBlockMorph drawing:
 
 ReporterBlockMorph.prototype.getBlockShape = function() {
+    var choice;
+
     if (this.isPredicate) return "predicate";
     if (this.reports === "color") return "color";
+
+    if (this.selector == "getPenAttribute" || this.selector == "reportAspect") {
+        choice = this.inputs()[0].evaluate();
+        if (choice instanceof Array && choice[0] === "color") return "color";
+    }
     
     return "reporter";
 }
@@ -13279,7 +13286,7 @@ TemplateSlotMorph.prototype.outlinePath =
 
 TemplateSlotMorph.prototype.drawEdgesRounded = 
     ReporterBlockMorph.prototype.drawEdgesRounded;
-    
+
 TemplateSlotMorph.prototype.drawEdges = 
     ReporterBlockMorph.prototype.drawEdgesReporter;
 
