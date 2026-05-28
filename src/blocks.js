@@ -7929,18 +7929,28 @@ ReporterBlockMorph.prototype.userDestroy = function () {
 
 // ReporterBlockMorph drawing:
 
+ReporterBlockMorph.prototype.getBlockShape = function() {
+    if (this.isPredicate) return "predicate";
+    if (this.reports === "color") return "color";
+    
+    return "reporter";
+}
+
 ReporterBlockMorph.prototype.outlinePath = function (ctx, inset) {
-    if (this.isPredicate) {
-        this.outlinePathDiamond(ctx, inset);
-    } else {
-        this.outlinePathOval(ctx, inset);
+    var shape = this.getBlockShape();
+
+    if (shape === "predicate") {
+        this.outlinePathPredicate(ctx, inset);
+    } else if (shape === "reporter") {
+        this.outlinePathReporter(ctx, inset);
+    }else if (shape === "color") {
+        this.outlinePathColor(ctx, inset);
     }
 };
 
-ReporterBlockMorph.prototype.outlinePathOval = function (ctx, inset) {
+ReporterBlockMorph.prototype.outlinePathRounded = function (ctx, inset, r) {
     // draw the 'flat' shape
     var h = this.height(),
-        r = Math.min(this.rounding, h / 2),
         radius = Math.max(r - inset, 0),
         w = this.width(),
         pos = this.position();
@@ -7993,7 +8003,15 @@ ReporterBlockMorph.prototype.outlinePathOval = function (ctx, inset) {
     ctx.lineTo(r - radius, r); // close the path so we can clip it for rings
 };
 
-ReporterBlockMorph.prototype.outlinePathDiamond = function (ctx, inset) {
+ReporterBlockMorph.prototype.outlinePathReporter = function (ctx, inset) {
+    return this.outlinePathRounded(ctx, inset, Math.min(this.rounding, this.height() / 2))
+};
+
+ReporterBlockMorph.prototype.outlinePathColor = function (ctx, inset) {
+    return this.outlinePathRounded(ctx, inset, 0)
+};
+
+ReporterBlockMorph.prototype.outlinePathPredicate = function (ctx, inset) {
     // draw the 'flat' shape:
     var w = this.width(),
         h = this.height(),
@@ -8020,17 +8038,20 @@ ReporterBlockMorph.prototype.outlinePathDiamond = function (ctx, inset) {
 };
 
 ReporterBlockMorph.prototype.drawEdges = function (ctx) {
-    if (this.isPredicate) {
-        this.drawEdgesDiamond(ctx);
-    } else {
-        this.drawEdgesOval(ctx);
+    var shape = this.getBlockShape();
+
+    if (shape === "predicate") {
+        this.drawEdgesPredicate(ctx);
+    } else if (shape === "reporter") {
+        this.drawEdgesReporter(ctx);
+    }else if (shape === "color") {
+        this.drawEdgesColor(ctx);
     }
 };
 
-ReporterBlockMorph.prototype.drawEdgesOval = function (ctx) {
+ReporterBlockMorph.prototype.drawEdgesRounded = function (ctx, r) {
     // add 3D-Effect
     var h = this.height(),
-        r = Math.max(Math.min(this.rounding, h / 2), this.edge),
         w = this.width(),
         shift = this.edge / 2,
         y,
@@ -8202,7 +8223,15 @@ ReporterBlockMorph.prototype.drawEdgesOval = function (ctx) {
     ctx.stroke();
 };
 
-ReporterBlockMorph.prototype.drawEdgesDiamond = function (ctx) {
+ReporterBlockMorph.prototype.drawEdgesReporter = function (ctx) {
+    this.drawEdgesRounded(ctx, Math.max(Math.min(this.rounding, this.height() / 2), this.edge));
+}
+
+ReporterBlockMorph.prototype.drawEdgesColor = function (ctx) {
+    this.drawEdgesRounded(ctx, this.edge);
+}
+
+ReporterBlockMorph.prototype.drawEdgesPredicate = function (ctx) {
     // add 3D-Effec
     var w = this.width(),
         h = this.height(),
@@ -13242,14 +13271,17 @@ TemplateSlotMorph.prototype.render = function (ctx) {
     BlockMorph.prototype.render.call(this, ctx);
 };
 
-TemplateSlotMorph.prototype.outlinePath =
-    ReporterBlockMorph.prototype.outlinePathOval;
+TemplateSlotMorph.prototype.outlinePathRounded =
+    ReporterBlockMorph.prototype.outlinePathRounded;
 
 TemplateSlotMorph.prototype.outlinePath =
-    ReporterBlockMorph.prototype.outlinePathOval;
+    ReporterBlockMorph.prototype.outlinePathReporter;
 
-TemplateSlotMorph.prototype.drawEdges = ReporterBlockMorph
-    .prototype.drawEdgesOval;
+TemplateSlotMorph.prototype.drawEdgesRounded = 
+    ReporterBlockMorph.prototype.drawEdgesRounded;
+    
+TemplateSlotMorph.prototype.drawEdges = 
+    ReporterBlockMorph.prototype.drawEdgesReporter;
 
 TemplateSlotMorph.prototype.hasLocationPin = function () {
     return false;
