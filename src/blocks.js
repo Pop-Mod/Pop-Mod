@@ -7965,11 +7965,11 @@ ReporterBlockMorph.prototype.getBlockShape = function() {
     }
 
     // object special
-    if (this.selector == "reportGet") {
+    if (this.selector == "reportGet" || this.selector == "reportEnvironment") {
         choice = this.inputs()[0].evaluate();
 
         if (choice instanceof Array && 
-                ["self", "anchor", "stage", "parent"].includes(choice[0])) return "agent";
+                ["self", "anchor", "stage", "parent", "object"].includes(choice[0])) return "agent";
     }
     
     return "reporter";
@@ -12663,9 +12663,13 @@ InputSlotMorph.prototype.reactToEdit = function () {
         );
     }
 
-    // when a report get menu is changed, we need to fix-layout
-    // to handle the new agent block shape
-    if (block.selector === "reportGet") {
+    // when a reportGet or reportEnvironment
+    //  menu is changed, we need to fix-layout
+    // to handle the new block shape
+
+    // (it does a agent for a self/stage/anchor/
+    // parent for reportGet, and object for reportEnvironment)
+    if (block.selector === "reportGet" || block.selector === "reportEnvironment") {
         block.fixLayout();
     }
 };
