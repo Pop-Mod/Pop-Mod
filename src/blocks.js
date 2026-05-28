@@ -2269,6 +2269,15 @@ SyntaxElementMorph.prototype.isObjInputFragment = function () {
 
 // SyntaxElementMorph layout:
 
+SyntaxElementMorph.prototype.predicateLike = function() {
+    if (!(this instanceof ReporterBlockMorph)) return false;
+
+    if (this.isPredicate) return true;
+    if (this.getBlockShape() == "agent") return true;
+
+    return false;
+}
+
 SyntaxElementMorph.prototype.fixLayout = function () {
     var nb,
         parts = this.parts(),
@@ -2289,7 +2298,8 @@ SyntaxElementMorph.prototype.fixLayout = function () {
         rightCorrection = 0,
         rightMost,
         hasLoopCSlot = false,
-        hasLoopArrow = false;
+        hasLoopArrow = false,
+        predicateLike = this.predicateLike();
 
     if ((this instanceof MultiArgMorph) && (this.slotSpec !== '%cs')) {
         blockWidth += this.arrows().width();
@@ -2375,6 +2385,8 @@ SyntaxElementMorph.prototype.fixLayout = function () {
             x = this.left() + space; //this.labelPadding;
         } else if (this.isPredicate) {
             x = this.left() + ico + this.rounding;
+        } else if (this.getBlockShape ? this.getBlockShape() == "agent" : false) {
+            x = this.left() + ico + this.rounding*1.5;
         } else if (this instanceof MultiArgMorph ||
             this instanceof ArgLabelMorph
         ) {
@@ -2390,6 +2402,8 @@ SyntaxElementMorph.prototype.fixLayout = function () {
                 x -= this.labelPadding;
                 if (this.isPredicate) {
                     x = this.left() + ico + this.rounding;
+                } else if (this.getBlockShape ? this.getBlockShape() == "agent" : false) {
+                    x = this.left() + ico + this.rounding * 1.5;
                 }
                 part.setColor(this.color);
                 part.setPosition(new Point(x, y));
@@ -2397,7 +2411,7 @@ SyntaxElementMorph.prototype.fixLayout = function () {
             } else if (part instanceof MultiArgMorph &&
                     (part.slotSpec.includes('%cs'))
             ) {
-                if (this.isPredicate) {
+                if (predicateLike) {
                     x += this.corner;
                 }
                 part.setPosition(new Point(x, y));
@@ -2476,10 +2490,16 @@ SyntaxElementMorph.prototype.fixLayout = function () {
     }
 
     // determine my width:
-    if (this.isPredicate) {
+    if (predicateLike) {
         blockWidth = Math.max(
             blockWidth,
             maxX - this.left() + this.rounding
+        );
+        rightCorrection = space;
+    } else if (this.getBlockShape ? this.getBlockShape() == "agent" : false) {
+        blockWidth = Math.max(
+            blockWidth,
+            maxX - this.left() + this.rounding * 1.5
         );
         rightCorrection = space;
     } else if ((this instanceof MultiArgMorph && this.slotSpec !== '%cs')
@@ -2519,7 +2539,7 @@ SyntaxElementMorph.prototype.fixLayout = function () {
         if (part instanceof CSlotMorph ||
             (part.slotSpec && part.slotSpec.includes('%cs'))
         ) {
-            if (this.isPredicate) {
+            if (predicateLike) {
                 part.bounds.setWidth(
                     blockWidth -
                         ico -
@@ -5608,7 +5628,7 @@ BlockMorph.prototype.drawMethodIcon = function (ctx) {
     if (this instanceof HatBlockMorph) {
         y = (this.height() - this.hatHeight + h) / 2;
     }
-    if (this.isPredicate) {
+    if (this.predicateLike()) {
         x = this.rounding;
     }
     ctx.fillStyle = isNormal ? this.cachedClrBright : this.cachedClrDark;
@@ -7934,6 +7954,9 @@ ReporterBlockMorph.prototype.getBlockShape = function() {
 
     if (this.isPredicate) return "predicate";
     if (this.reports === "color") return "color";
+    if (this.reports === "agent") return "agent";
+    if (this.reports === "sprite") return "agent";
+    if (this.reports === "stage") return "agent";
 
     if (this.selector == "getPenAttribute" || this.selector == "reportAspect") {
         choice = this.inputs()[0].evaluate();
@@ -7950,8 +7973,10 @@ ReporterBlockMorph.prototype.outlinePath = function (ctx, inset) {
         this.outlinePathPredicate(ctx, inset);
     } else if (shape === "reporter") {
         this.outlinePathReporter(ctx, inset);
-    }else if (shape === "color") {
+    } else if (shape === "color") {
         this.outlinePathColor(ctx, inset);
+    } else if (shape === "agent") {
+        this.outlinePathAgent(ctx, inset);
     }
 };
 
@@ -8010,6 +8035,7 @@ ReporterBlockMorph.prototype.outlinePathRounded = function (ctx, inset, r) {
     ctx.lineTo(r - radius, r); // close the path so we can clip it for rings
 };
 
+
 ReporterBlockMorph.prototype.outlinePathReporter = function (ctx, inset) {
     return this.outlinePathRounded(ctx, inset, Math.min(this.rounding, this.height() / 2))
 };
@@ -8042,6 +8068,32 @@ ReporterBlockMorph.prototype.outlinePathPredicate = function (ctx, inset) {
 
     ctx.lineTo(right - inset, h - inset);
     ctx.lineTo(r, h - inset);
+};
+
+ReporterBlockMorph.prototype.outlinePathAgent = function (ctx, inset) {
+    // draw the 'flat' shape:
+    var w = this.width(),
+        h = this.height(),
+        h2 = Math.floor(h / 2),
+        r = this.rounding,
+        right = w - r,
+        pos = this.position(),
+        cslots = this.cSlots();
+
+    ctx.moveTo(inset + r, h2);
+    ctx.lineTo(inset, 0);
+    ctx.lineTo(right - inset, inset);
+
+    if (cslots.length) {
+        this.cSlots().forEach(slot => {
+            slot.outlinePath(ctx, inset, slot.position().subtract(pos));
+        });
+    } else {
+        ctx.lineTo(w - inset, h2);
+    }
+
+    ctx.lineTo(right - inset, h - inset);
+    ctx.lineTo(inset, h - inset);
 };
 
 ReporterBlockMorph.prototype.drawEdges = function (ctx) {
