@@ -403,6 +403,19 @@ SpriteMorph.prototype.primitiveBlocks = function () {
                 (prim t setYPosition y)
                 (goto (list (x) (get y))))`
         },
+        changeXYPosition: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'change position by x: %n y: %n',
+            defaults: [10, 10],
+            animation: true,
+            code: '+xy',
+            src: `(
+                (prim t changeXYPosition x y)
+                (go (+ (x) (get x)) 
+                    (+ (y) (get y)))`
+        },
         bounceOffEdge: {
             only: SpriteMorph,
             type: 'command',
@@ -3051,10 +3064,10 @@ SpriteMorph.prototype.blockAlternatives = {
     doGotoObject: ['doFaceTowards'],
     doGlide: [['gotoXY', -1]],
     changeXPosition: ['changeYPosition', 'setXPosition', 'setYPosition',
-        'forward'],
+        'changeXYPosition', 'forward'],
     setXPosition: ['setYPosition', 'changeXPosition', 'changeYPosition'],
     changeYPosition: ['changeXPosition', 'setYPosition', 'setXPosition',
-        'forward'],
+        'changeXYPosition', 'forward'],
     setYPosition: ['setXPosition', 'changeYPosition', 'changeXPosition'],
     xPosition: ['yPosition', 'getPosition'],
     yPosition: ['xPosition', 'getPosition'],
@@ -3848,6 +3861,7 @@ SpriteMorph.prototype.blockTemplates = function (
         blocks.push(block('setXPosition'));
         blocks.push(block('changeYPosition'));
         blocks.push(block('setYPosition'));
+        blocks.push(block('changeXYPosition'));
         blocks.push('-');
         blocks.push(block('bounceOffEdge'));
         blocks.push('-');
@@ -8369,6 +8383,10 @@ SpriteMorph.prototype.setYPosition = function (num) {
 
 SpriteMorph.prototype.changeYPosition = function (delta) {
     this.setYPosition(this.yPosition() + (+delta || 0));
+};
+
+SpriteMorph.prototype.changeXYPosition = function (x, y) {
+    this.gotoXY(this.xPosition() + (+x || 0), this.yPosition() + (+y || 0), false, true);
 };
 
 SpriteMorph.prototype.glide = function (
