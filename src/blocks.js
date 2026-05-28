@@ -7958,9 +7958,18 @@ ReporterBlockMorph.prototype.getBlockShape = function() {
     if (this.reports === "sprite") return "agent";
     if (this.reports === "stage") return "agent";
 
+    // color special
     if (this.selector == "getPenAttribute" || this.selector == "reportAspect") {
         choice = this.inputs()[0].evaluate();
         if (choice instanceof Array && choice[0] === "color") return "color";
+    }
+
+    // object special
+    if (this.selector == "reportGet") {
+        choice = this.inputs()[0].evaluate();
+
+        if (choice instanceof Array && 
+                ["self", "anchor", "stage", "parent"].includes(choice[0])) return "agent";
     }
     
     return "reporter";
@@ -12652,6 +12661,12 @@ InputSlotMorph.prototype.reactToEdit = function () {
         block.fireSlotEditedEvent(
             this.parent instanceof MultiArgMorph ? this.parent : this
         );
+    }
+
+    // when a report get menu is changed, we need to fix-layout
+    // to handle the new agent block shape
+    if (block.selector === "reportGet") {
+        block.fixLayout();
     }
 };
 
